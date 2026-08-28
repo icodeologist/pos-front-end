@@ -38,16 +38,23 @@ export default function Billing() {
     });
   };
 
-  const handleIncrease = (productID: number) => {
-    setCart((prev) =>
-      prev.map((item) => (item.productID === productID ? { ...item, quantity: item.quantity + 1 } : item))
-    );
-  };
-
-  const handleDecrease = (productID: number) => {
+  // const handleIncrease = (productID: number) => {
+  //   setCart((prev) =>
+  //     prev.map((item) => (item.productID === productID ? { ...item, quantity: item.quantity + 1 } : item))
+  //   );
+  // };
+  //
+  // const handleDecrease = (productID: number) => {
+  //   setCart((prev) =>
+  //     prev
+  //       .map((item) => (item.productID === productID ? { ...item, quantity: item.quantity - 1 } : item))
+  //       .filter((item) => item.quantity > 0)
+  //   );
+  // };
+  const handleQuantityChange = (productID: number, quantity: number) => {
     setCart((prev) =>
       prev
-        .map((item) => (item.productID === productID ? { ...item, quantity: item.quantity - 1 } : item))
+        .map((item) => (item.productID === productID ? { ...item, quantity } : item))
         .filter((item) => item.quantity > 0)
     );
   };
@@ -134,8 +141,8 @@ export default function Billing() {
             <div>
               <CartPanel
                 items={cart}
-                onIncrease={handleIncrease}
-                onDecrease={handleDecrease}
+                onQuantityChange={handleQuantityChange}
+                // onDecrease={handleDecrease}
                 onRemove={handleRemove}
                 onCreateOrder={handleCreateOrder}
                 creatingOrder={creatingOrder}
