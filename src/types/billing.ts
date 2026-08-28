@@ -64,15 +64,21 @@ export interface OrderResponse {
   PaymentMethod: string;
   PaymentBalance: number;
   Status: string;
-  OrderItems: OrderItemResponse[];
+  OrderItems: OrderItemResponse[] | null;
 }
 
 export interface PaymentResponse {
   ID: number;
   OrderID: number;
-  AmountTendered: number;
+  AmountTendered: number | null;
   ChangeGiven: number;
   Method: string;
   TimeStamp: string;
   PaymentThroughCredit: boolean;
+}
+export interface RecordPaymentResponse {
+  order: OrderResponse;
+  payment: PaymentResponse;
+  message: string;
+  change_given: number;
 }

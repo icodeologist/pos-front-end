@@ -14,7 +14,7 @@ export default function OrderSummary({ order, onProceedToPayment }: OrderSummary
       <div className="bg-stone-50 rounded-lg p-4 mb-6 space-y-1">
         <p className="text-stone-800">Order #{order.ID}</p>
         <p className="text-stone-500 text-sm">Status: {order.Status}</p>
-        <p className="text-stone-500 text-sm">Items: {order.OrderItems.length}</p>
+        <p className="text-stone-500 text-sm">Items: {order.OrderItems?.length ?? 0}</p>
         <p className="text-stone-800 font-medium mt-2">
           Total: ₹{order.TotalAmount.toFixed(2)}
         </p>

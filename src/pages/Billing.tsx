@@ -20,7 +20,9 @@ export default function Billing() {
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [submittingPayment, setSubmittingPayment] = useState(false);
   const [error, setError] = useState("");
-
+  // setting up the idempotency key from fe and sending to be
+  const [orderIdempotencyKey, setOrderIdempotencyKey] = useState<string>("");
+  const [paymentIdempotencyKey, setPaymentIdempotencyKey] = useState<string>("");
   const handleAddToCart = (product: Product) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.productID === product.id);
@@ -66,8 +68,11 @@ export default function Billing() {
           unit: item.unit,
           quantity: item.quantity,
         })),
-      });
+      },
+        orderIdempotencyKey
+      );
       setOrder(created);
+      setPaymentIdempotencyKey(crypto.randomUUID());
       setStep("summary");
     } catch {
       setError("Could not create order.");
@@ -87,14 +92,15 @@ export default function Billing() {
     setSubmittingPayment(true);
     setError("");
     try {
-      const result = await recordPayment(order.ID, payload);
-      setPayment(result);
+      const result = await recordPayment(order.ID, payload, paymentIdempotencyKey);
+      setPayment(result.payment);
       setStep("done");
     } catch {
       setError("Payment failed.");
     } finally {
       setSubmittingPayment(false);
     }
+
   };
 
   return (
@@ -113,6 +119,8 @@ export default function Billing() {
           <CustomerStep
             onCustomerFound={(c) => {
               setCustomer(c);
+              // once the customer is found just before goint to product list set up the orderIdempotencyKey
+              setOrderIdempotencyKey(crypto.randomUUID());
               setStep("cart");
             }}
           />
