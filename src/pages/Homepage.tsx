@@ -1,16 +1,16 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useRole } from "../context/RoleContext"
 import Sidebar from "../components/home/Sidebar";
 import TopBar from "../components/home/TopBar";
 import StatsBanner from "../components/home/StatsBanner";
 import ActionGrid from "../components/home/ActionGrid";
-import type { Role, ActionItem } from "../types/dashboard";
+import type { ActionItem } from "../types/dashboard";
 
 export default function Home() {
   const navigate = useNavigate();
+  const { role, setRole } = useRole();
   // MOCK ONLY: no real role check yet — toggle to preview both views.
   // Remove this once BE role/auth is wired up.
-  const [role, setRole] = useState<Role>("admin");
 
   const adminActions: ActionItem[] = [
     { label: "Create Order", description: "Start a new sale", onClick: () => navigate("/billing") },

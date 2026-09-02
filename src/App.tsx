@@ -4,18 +4,28 @@ import AdminLogin from "./pages/adminLogin";
 import CustomerLookup from "./pages/CustomerLookup";
 import Home from "./pages/Homepage";
 import Billing from "./pages/Billing";
+import Products from "./pages/Products";
+import { RoleProvider } from "./context/RoleContext";
+import CreateProduct from "./pages/CreateProduct";
+import EditProduct from "./pages/EditProduct";
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/admin/register" element={<AdminRegister />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/customer/register" element={<CustomerLookup />} />
-        <Route path="/" element={<Home />} />
-        <Route path="/billing" element={<Billing />} />
-      </Routes>
-    </BrowserRouter>
+    <RoleProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/admin/register" element={<AdminRegister />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/customer/register" element={<CustomerLookup />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/billing" element={<Billing />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/products/new" element={<CreateProduct />} />
+          <Route path="/products/edit/:id" element={<EditProduct />} />
+        </Routes>
+      </BrowserRouter>
+    </RoleProvider>
+
   );
 }
 
