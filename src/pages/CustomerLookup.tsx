@@ -1,8 +1,11 @@
 import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { getCustomerByPhone, registerCustomer } from "../api/customer";
 import type { Customer } from "../api/customer";
 
 export default function CustomerLookup() {
+  const navigate = useNavigate();
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
 
@@ -22,8 +25,8 @@ export default function CustomerLookup() {
       const found = await getCustomerByPhone(phone);
       setCustomer(found);
       setStage("found");
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
         // Expected case — not an error, just means "register them"
         setStage("not-found");
       } else {
@@ -40,40 +43,39 @@ export default function CustomerLookup() {
       const created = await registerCustomer({ name, phone_number: phone });
       setCustomer(created);
       setStage("found");
-    } catch (err: any) {
-      setMessage(`Failed: ${err.response?.data ?? "unknown error"}`);
+    } catch (err: unknown) {
+      setMessage(`Failed: ${axios.isAxiosError(err) ? err.response?.data ?? "unknown error" : "unknown error"}`);
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-50 px-4">
-      <div className="w-full max-w-sm bg-white border border-stone-200 border-l-4 border-l-emerald-800 rounded-sm shadow-sm p-8">
-        <p className="text-xs font-medium tracking-widest text-stone-400 uppercase mb-1">
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+        <button onClick={() => navigate("/")} className="mb-8 flex items-center gap-3 text-left"><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500 font-extrabold text-white shadow-lg shadow-orange-200">N</span><span><span className="block font-extrabold text-slate-900">NexaPOS</span><span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Business Suite</span></span></button><p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">
           New Order
         </p>
         <h1
-          className="text-2xl font-semibold text-stone-900 mb-6"
-          style={{ fontFamily: "'Fraunces', serif" }}
+          className="mb-2 text-2xl font-extrabold text-slate-900"
         >
           Customer Lookup
-        </h1>
+        </h1><p className="mb-7 text-sm text-slate-500">Find an account or register a new customer.</p>
 
         {stage === "enter-phone" && (
           <form onSubmit={handleLookup} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
                 Phone Number
               </label>
               <input
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                 maxLength={10}
-                className="w-full border border-stone-300 rounded-sm px-3 py-2 text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-800 focus:border-emerald-800"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-emerald-800 text-white py-2.5 rounded-sm font-medium hover:bg-emerald-900 transition-colors"
+              className="w-full whitespace-nowrap rounded-xl bg-orange-500 py-3.5 font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600"
             >
               Find Customer
             </button>
@@ -82,22 +84,22 @@ export default function CustomerLookup() {
 
         {stage === "not-found" && (
           <form onSubmit={handleRegister} className="space-y-4">
-            <p className="text-sm text-stone-500">
+            <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-700">
               No customer found for {phone}. Register them below.
             </p>
             <div>
-              <label className="block text-sm font-medium text-stone-700 mb-1">
+              <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">
                 Name
               </label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full border border-stone-300 rounded-sm px-3 py-2 text-stone-900 focus:outline-none focus:ring-2 focus:ring-emerald-800 focus:border-emerald-800"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
               />
             </div>
             <button
               type="submit"
-              className="w-full bg-emerald-800 text-white py-2.5 rounded-sm font-medium hover:bg-emerald-900 transition-colors"
+              className="w-full whitespace-nowrap rounded-xl bg-orange-500 py-3.5 font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600"
             >
               Register & Continue
             </button>
@@ -105,20 +107,20 @@ export default function CustomerLookup() {
         )}
 
         {stage === "found" && customer && (
-          <div>
-            <p className="text-stone-900 font-medium">{customer.name}</p>
-            <p className="text-sm text-stone-500">{customer.phone_number}</p>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <p className="font-extrabold text-slate-900">{customer.name}</p>
+            <p className="mt-1 font-mono text-sm text-slate-500">{customer.phone_number}</p>
             {customer.balance > 0 && (
-              <p className="text-sm text-amber-700 mt-2">
+              <p className="mt-3 inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
                 Owes ₹{customer.balance.toFixed(2)} in credit
               </p>
             )}
-            {/* Next step: hand `customer` off to the order-taking flow */}
+            <button onClick={() => navigate("/billing")} className="mt-5 w-full rounded-xl bg-slate-900 py-3 text-sm font-bold text-white hover:bg-orange-500">Continue to POS</button>
           </div>
         )}
 
         {message && (
-          <p className="mt-4 text-sm text-stone-600 border-t border-stone-100 pt-4">
+          <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-600">
             {message}
           </p>
         )}
