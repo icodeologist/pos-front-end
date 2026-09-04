@@ -1,61 +1,51 @@
+import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRole } from "../context/RoleContext"
-import Sidebar from "../components/home/Sidebar";
-import TopBar from "../components/home/TopBar";
-import StatsBanner from "../components/home/StatsBanner";
-import ActionGrid from "../components/home/ActionGrid";
-import type { ActionItem } from "../types/dashboard";
+import { useRole } from "../context/RoleContext";
+
+type IconName = "grid" | "cart" | "box" | "users" | "chart" | "receipt" | "settings" | "search" | "bell" | "menu" | "arrow" | "trend" | "wallet" | "bag" | "alert" | "plus" | "close";
+const paths: Record<IconName, ReactNode> = {
+  grid:<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
+  cart:<><circle cx="9" cy="20" r="1"/><circle cx="19" cy="20" r="1"/><path d="M3 4h2l2.4 10.4A2 2 0 0 0 9.3 16h8.9a2 2 0 0 0 1.9-1.4L22 8H6"/></>,
+  box:<><path d="m21 8-9-5-9 5 9 5 9-5Z"/><path d="m3 8 9 5 9-5v8l-9 5-9-5V8Z"/><path d="M12 13v8"/></>,
+  users:<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></>,
+  chart:<><path d="M3 3v18h18"/><path d="m7 16 4-5 4 3 5-7"/></>,
+  receipt:<path d="M6 2h12a2 2 0 0 1 2 2v18l-4-2-4 2-4-2-4 2V4a2 2 0 0 1 2-2Zm3 6h6m-6 4h6m-6 4h3"/>,
+  settings:<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l-2.83 2.83a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V21h-4a1.7 1.7 0 0 0-1-1.63 1.7 1.7 0 0 0-1.88.34l-2.83-2.83A1.7 1.7 0 0 0 4.6 15 1.7 1.7 0 0 0 3 14v-4a1.7 1.7 0 0 0 1.63-1 1.7 1.7 0 0 0-.34-1.88l2.83-2.83A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3h4a1.7 1.7 0 0 0 1 1.63 1.7 1.7 0 0 0 1.88-.34l2.83 2.83A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 1.6 1v4a1.7 1.7 0 0 0-1.6 1Z"/></>,
+  search:<><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>, bell:<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M14 21h-4"/></>, menu:<path d="M4 6h16M4 12h16M4 18h16"/>, arrow:<path d="m9 18 6-6-6-6"/>, trend:<><path d="m3 17 6-6 4 4 8-9"/><path d="M15 6h6v6"/></>, wallet:<><path d="M20 7V5a2 2 0 0 0-2-2H5a3 3 0 0 0 0 6h15v12H5a3 3 0 0 1-3-3V6"/><path d="M16 14h2"/></>, bag:<><path d="M6 8h12l1 13H5L6 8Z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></>, alert:<><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></>, plus:<path d="M12 5v14M5 12h14"/>, close:<path d="m6 6 12 12M18 6 6 18"/>
+};
+function Icon({name,className="h-5 w-5"}:{name:IconName;className?:string}) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">{paths[name]}</svg>; }
+
+const nav: {label:string;icon:IconName;path?:string}[] = [
+  {label:"Overview",icon:"grid",path:"/"},{label:"Point of Sale",icon:"cart",path:"/billing"},{label:"Products",icon:"box",path:"/products"},{label:"Customers",icon:"users",path:"/customer/register"},{label:"Reports",icon:"chart"},{label:"Transactions",icon:"receipt"}
+];
+const transactions = [
+  ["#INV-2048","Walk-in Customer","10:42 AM","₹1,248.00","Paid"], ["#INV-2047","Aarav Traders","10:16 AM","₹3,680.00","Credit"], ["#INV-2046","Meera Nair","09:51 AM","₹845.00","Paid"], ["#INV-2045","Green Mart","09:22 AM","₹2,120.00","Paid"]
+];
 
 export default function Home() {
-  const navigate = useNavigate();
-  const { role, setRole } = useRole();
-  // MOCK ONLY: no real role check yet — toggle to preview both views.
-  // Remove this once BE role/auth is wired up.
-
-  const adminActions: ActionItem[] = [
-    { label: "Create Order", description: "Start a new sale", onClick: () => navigate("/billing") },
-    { label: "Manage Products", description: "Edit catalog & stock", onClick: () => { } },
-    { label: "View Reports", description: "Sales & credit summary", onClick: () => { } },
-  ];
-
-  const staffActions: ActionItem[] = [
-    { label: "Create Order", description: "Start a new sale", onClick: () => navigate("/billing") },
-  ];
-
-  const actions = role === "admin" ? adminActions : staffActions;
-
-  return (
-    <div className="min-h-screen bg-stone-50 p-6">
-      {/* MOCK role switcher — dev only, delete once real auth roles exist */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={() => setRole(role === "admin" ? "staff" : "admin")}
-          className="text-xs text-stone-400 border border-stone-200 rounded-full px-3 py-1 hover:border-stone-400"
-        >
-          Viewing as: {role} (click to switch)
-        </button>
-      </div>
-
-      <div className="flex gap-6">
-        <Sidebar role={role} />
-
-        <div className="flex-1 space-y-6">
-          <div className="flex justify-between items-start gap-6">
-            <div className="flex-1">
-              <h1 className="font-fraunces text-2xl text-stone-800 mb-1">
-                Poultry Shop
-              </h1>
-              <p className="text-stone-500 text-sm">
-                {role === "admin" ? "Admin dashboard" : "Staff dashboard"}
-              </p>
-            </div>
-            <TopBar role={role} />
-          </div>
-
-          <StatsBanner />
-          <ActionGrid actions={actions} />
-        </div>
-      </div>
+  const navigate=useNavigate(); const {role,setRole}=useRole(); const [open,setOpen]=useState(false);
+  const go=(path?:string)=>{if(path) navigate(path); setOpen(false)};
+  return <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
+    {open&&<button aria-label="Close navigation" className="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" onClick={()=>setOpen(false)}/>}
+    <aside className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-slate-900 px-4 py-5 text-white transition-transform duration-300 lg:translate-x-0 ${open?"translate-x-0":"-translate-x-full"}`}>
+      <div className="flex items-center justify-between px-2 pb-8"><button onClick={()=>go("/")} className="flex items-center gap-3 text-left"><span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-500 shadow-lg shadow-orange-950/30"><Icon name="receipt"/></span><span><span className="block text-lg font-extrabold tracking-tight">NexaPOS</span><span className="block text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Business Suite</span></span></button><button className="p-2 text-slate-400 lg:hidden" onClick={()=>setOpen(false)}><Icon name="close"/></button></div>
+      <p className="px-3 pb-3 text-[10px] font-bold uppercase tracking-[.18em] text-slate-500">Workspace</p>
+      <nav className="space-y-1">{nav.map((item,i)=><button key={item.label} onClick={()=>go(item.path)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${i===0?"bg-orange-500 text-white shadow-lg shadow-orange-950/20":"text-slate-400 hover:bg-slate-800 hover:text-white"}`}><Icon name={item.icon} className="h-[18px] w-[18px]"/><span className="whitespace-nowrap">{item.label}</span></button>)}</nav>
+      <div className="mt-auto"><div className="mb-4 rounded-2xl border border-slate-700 bg-slate-800 p-4"><div className="mb-3 flex justify-between text-xs font-bold"><span className="text-slate-300">Monthly goal</span><span className="font-mono text-orange-400">76%</span></div><div className="h-1.5 rounded-full bg-slate-700"><div className="h-full w-3/4 rounded-full bg-orange-500"/></div><p className="mt-3 text-[11px] text-slate-400">₹3.8L of ₹5L revenue target</p></div><button className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white"><Icon name="settings" className="h-[18px] w-[18px]"/>Settings</button></div>
+    </aside>
+    <div className="lg:pl-64">
+      <header className="sticky top-0 z-30 flex h-[76px] items-center border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8"><button className="mr-3 rounded-xl border border-slate-200 p-2.5 text-slate-600 lg:hidden" onClick={()=>setOpen(true)}><Icon name="menu"/></button><div className="relative hidden max-w-md flex-1 md:block"><Icon name="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><input className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm outline-none placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100" placeholder="Search products, orders, customers..."/></div><div className="ml-auto flex items-center gap-3 sm:gap-4"><button aria-label="Notifications" className="relative rounded-xl border border-slate-200 p-2.5 text-slate-500"><Icon name="bell" className="h-[18px] w-[18px]"/><span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-orange-500"/></button><div className="hidden h-8 w-px bg-slate-200 sm:block"/><button onClick={()=>setRole(role==="admin"?"staff":"admin")} title="Switch preview role" className="flex items-center gap-3 text-left"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-sm font-extrabold text-white">{role==="admin"?"AU":"SU"}</span><span className="hidden sm:block"><span className="block text-sm font-bold text-slate-800">{role==="admin"?"Admin User":"Staff User"}</span><span className="block text-[11px] font-semibold capitalize text-slate-400">{role} account</span></span></button></div></header>
+      <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
+        <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">Friday, 04 September</p><h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Good morning, {role === "admin" ? "Admin" : "Staff"}.</h1><p className="mt-1.5 text-sm text-slate-500">Here’s what’s happening with your business today.</p></div><button onClick={()=>navigate("/billing")} className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5 hover:bg-orange-600"><Icon name="plus" className="h-4 w-4"/>New Sale</button></div>
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{[
+          ["Today's revenue","₹24,580","+12.5%","wallet","bg-orange-50 text-orange-600"],["Total orders","148","+8.2%","bag","bg-blue-50 text-blue-600"],["Products sold","392","+5.4%","box","bg-violet-50 text-violet-600"],["Low stock items","12","Needs attention","alert","bg-amber-50 text-amber-600"]
+        ].map((s,i)=><article key={s[0]} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="mb-5 flex items-center justify-between"><span className={`grid h-11 w-11 place-items-center rounded-xl ${s[4]}`}><Icon name={s[3] as IconName}/></span>{i<3&&<span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-700"><Icon name="trend" className="h-3 w-3"/>{s[2]}</span>}</div><p className="text-xs font-bold uppercase tracking-wider text-slate-400">{s[0]}</p><div className="mt-1.5 flex items-end justify-between gap-2"><p className="font-mono text-2xl font-bold tracking-tight">{s[1]}</p>{i===3&&<span className="whitespace-nowrap text-[10px] font-bold text-amber-600">{s[2]}</span>}</div></article>)}</section>
+        <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.65fr)_minmax(300px,.7fr)]">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"><div className="mb-6 flex items-center justify-between"><div><h2 className="font-extrabold">Sales overview</h2><p className="mt-1 text-xs text-slate-400">Revenue performance this week</p></div><select className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600"><option>Last 7 days</option></select></div><div className="flex h-64 gap-3"><div className="flex flex-col justify-between pb-6 text-right font-mono text-[10px] text-slate-400"><span>₹40K</span><span>₹30K</span><span>₹20K</span><span>₹10K</span><span>₹0</span></div><div className="relative flex flex-1 items-end justify-around border-b border-slate-200 bg-[linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] bg-[size:100%_25%] px-1">{[48,66,56,82,72,92,62].map((h,i)=><div key={i} className="group flex h-full flex-1 items-end justify-center"><div style={{height:`${h}%`}} className={`w-3/5 max-w-10 rounded-t-lg group-hover:bg-orange-500 ${i===5?"bg-orange-500 shadow-lg shadow-orange-100":"bg-orange-200"}`}/></div>)}<div className="absolute inset-x-0 -bottom-6 flex justify-around text-[10px] font-bold text-slate-400">{["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d=><span key={d} className="flex-1 text-center">{d}</span>)}</div></div></div></div>
+          <div className="rounded-2xl bg-slate-900 p-6 text-white shadow-sm"><div className="mb-6 flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-slate-500">Quick actions</p><h2 className="mt-1 text-lg font-extrabold">Run your counter</h2></div><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-800 text-orange-400"><Icon name="grid"/></span></div><div className="space-y-3">{[["Create a new sale","Open POS billing","cart","/billing"],["Add new product","Update your inventory","box","/products/new"],["Add a customer","Create customer profile","users","/customer/register"]].map(a=><button key={a[0]} onClick={()=>navigate(a[3])} className="group flex w-full items-center gap-3 rounded-xl bg-slate-800 p-3 text-left hover:bg-slate-700"><span className="grid h-10 w-10 place-items-center rounded-lg bg-slate-700 text-orange-400 group-hover:bg-orange-500 group-hover:text-white"><Icon name={a[2] as IconName} className="h-[18px] w-[18px]"/></span><span className="min-w-0 flex-1"><span className="block whitespace-nowrap text-sm font-bold">{a[0]}</span><span className="block text-[11px] text-slate-400">{a[1]}</span></span><Icon name="arrow" className="h-4 w-4 text-slate-500"/></button>)}</div></div>
+        </section>
+        <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-5 sm:px-6"><div><h2 className="font-extrabold">Recent transactions</h2><p className="mt-1 text-xs text-slate-400">Latest sales from your store</p></div><button className="flex items-center gap-1 whitespace-nowrap text-xs font-bold text-orange-500">View all <Icon name="arrow" className="h-3.5 w-3.5"/></button></div><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left"><thead><tr className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400">{["Invoice","Customer","Time","Amount","Status"].map(h=><th key={h} className="px-6 py-3">{h}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{transactions.map(r=><tr key={r[0]} className="hover:bg-slate-50"><td className="px-6 py-4 font-mono text-xs font-semibold text-slate-700">{r[0]}</td><td className="px-6 py-4 text-sm font-semibold">{r[1]}</td><td className="px-6 py-4 text-xs text-slate-400">{r[2]}</td><td className="px-6 py-4 font-mono text-sm font-semibold">{r[3]}</td><td className="px-6 py-4"><span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-bold ${r[4]==="Paid"?"bg-emerald-100 text-emerald-700":"bg-amber-100 text-amber-700"}`}>{r[4]}</span></td></tr>)}</tbody></table></div></section>
+      </main>
     </div>
-  );
+  </div>;
 }
