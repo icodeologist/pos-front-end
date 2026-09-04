@@ -1,177 +1,59 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import CustomerStep from "../components/billing/CustomerStep";
-import ProductList from "../components/billing/ProductList";
-import CartPanel from "../components/billing/CartPanel";
-import OrderSummary from "../components/billing/OrderSummary";
-import PaymentForm from "../components/billing/PaymentForm";
+import { getProducts } from "../api/products";
+import { getCustomerByPhone } from "../api/customer";
 import { createOrder, recordPayment } from "../api/orders";
-import type { Customer, CartItem, Product, OrderResponse, PaymentResponse } from "../types/billing";
+import type { CartItem, Customer, OrderResponse, Product } from "../types/billing";
 
-type Step = "customer" | "cart" | "summary" | "payment" | "done";
+type IconName = "arrow" | "bell" | "card" | "cash" | "check" | "chevron" | "close" | "database" | "minus" | "plus" | "search" | "trash" | "user";
+const iconPaths: Record<IconName, ReactNode> = {
+  arrow:<path d="m9 18 6-6-6-6"/>, bell:<><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M14 21h-4"/></>,
+  card:<><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></>, cash:<><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 9v6m12-6v6"/></>,
+  check:<path d="m5 12 4 4L19 6"/>, chevron:<path d="m9 18 6-6-6-6"/>, close:<path d="m6 6 12 12M18 6 6 18"/>, database:<><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></>,
+  minus:<path d="M5 12h14"/>, plus:<path d="M12 5v14M5 12h14"/>, search:<><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></>, trash:<><path d="M3 6h18M8 6V4h8v2m3 0-1 15H6L5 6m5 4v7m4-7v7"/></>, user:<><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></>
+};
+function Icon({name,className="h-5 w-5"}:{name:IconName;className?:string}) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className}>{iconPaths[name]}</svg>; }
+const money=(value:number)=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",minimumFractionDigits:2}).format(value);
+const today=new Intl.DateTimeFormat("en-US",{weekday:"long",month:"short",day:"numeric",year:"numeric"}).format(new Date());
 
 export default function Billing() {
-  const navigate = useNavigate();
-  const [step, setStep] = useState<Step>("customer");
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [order, setOrder] = useState<OrderResponse | null>(null);
-  const [payment, setPayment] = useState<PaymentResponse | null>(null);
-  const [creatingOrder, setCreatingOrder] = useState(false);
-  const [submittingPayment, setSubmittingPayment] = useState(false);
-  const [error, setError] = useState("");
-  // setting up the idempotency key from fe and sending to be
-  const [orderIdempotencyKey, setOrderIdempotencyKey] = useState<string>("");
-  const [paymentIdempotencyKey, setPaymentIdempotencyKey] = useState<string>("");
-  const handleAddToCart = (product: Product) => {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.productID === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.productID === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [
-        ...prev,
-        { productID: product.id, title: product.title, unit: product.unit, price: product.price, quantity: 1 },
-      ];
-    });
-  };
+  const navigate=useNavigate();
+  const [products,setProducts]=useState<Product[]>([]); const [loading,setLoading]=useState(true); const [loadError,setLoadError]=useState("");
+  const [search,setSearch]=useState(""); const [cart,setCart]=useState<CartItem[]>([]); const [customer,setCustomer]=useState<Customer|null>(null); const [phone,setPhone]=useState(""); const [customerError,setCustomerError]=useState(""); const [lookingUp,setLookingUp]=useState(false);
+  const [checkoutOpen,setCheckoutOpen]=useState(false); const [order,setOrder]=useState<OrderResponse|null>(null); const [paymentMethod,setPaymentMethod]=useState("CASH"); const [tendered,setTendered]=useState(""); const [submitting,setSubmitting]=useState(false); const [checkoutError,setCheckoutError]=useState(""); const [complete,setComplete]=useState(false); const [change,setChange]=useState(0);
 
-  // const handleIncrease = (productID: number) => {
-  //   setCart((prev) =>
-  //     prev.map((item) => (item.productID === productID ? { ...item, quantity: item.quantity + 1 } : item))
-  //   );
-  // };
-  //
-  // const handleDecrease = (productID: number) => {
-  //   setCart((prev) =>
-  //     prev
-  //       .map((item) => (item.productID === productID ? { ...item, quantity: item.quantity - 1 } : item))
-  //       .filter((item) => item.quantity > 0)
-  //   );
-  // };
-  const handleQuantityChange = (productID: number, quantity: number) => {
-    setCart((prev) =>
-      prev
-        .map((item) => (item.productID === productID ? { ...item, quantity } : item))
-        .filter((item) => item.quantity > 0)
-    );
-  };
+  const loadProducts=()=>{setLoading(true);setLoadError("");getProducts().then(setProducts).catch(()=>setLoadError("Could not reach the product service at localhost:5000." )).finally(()=>setLoading(false));};
+  useEffect(()=>{getProducts().then(setProducts).catch(()=>setLoadError("Could not reach the product service at localhost:5000.")).finally(()=>setLoading(false));},[]);
+  const filtered=useMemo(()=>products.filter(p=>p.title.toLowerCase().includes(search.toLowerCase())),[products,search]);
+  const total=cart.reduce((sum,item)=>sum+item.price*item.quantity,0);
+  const units=cart.reduce((sum,item)=>sum+item.quantity,0);
+  const setQuantity=(product:Product,quantity:number)=>setCart(prev=>quantity<=0?prev.filter(i=>i.productID!==product.id):[...prev.filter(i=>i.productID!==product.id),{productID:product.id,title:product.title,price:product.price,unit:product.unit,quantity:Math.min(quantity,product.stockQuantity)}]);
+  const add=(product:Product,amount:number)=>{const current=cart.find(i=>i.productID===product.id)?.quantity??0;setQuantity(product,Math.round((current+amount)*100)/100)};
+  const lookup=async()=>{if(phone.length!==10){setCustomerError("Enter a valid 10-digit phone number.");return}setLookingUp(true);setCustomerError("");try{setCustomer(await getCustomerByPhone(phone));}catch(error){setCustomerError(axios.isAxiosError(error)&&error.response?.status===404?"No customer found. Register this customer first.":"Customer lookup failed. Check the backend connection.");}finally{setLookingUp(false)}};
+  const reset=()=>{setCart([]);setCustomer(null);setPhone("");setCheckoutOpen(false);setOrder(null);setTendered("");setComplete(false);setCheckoutError("");setChange(0)};
+  const beginCheckout=async()=>{if(!customer){setCustomerError("Select a customer before checkout.");return}if(!cart.length)return;setSubmitting(true);setCheckoutError("");try{const created=await createOrder({customerID:customer.ID,items:cart.map(({productID,unit,quantity})=>({productID,unit,quantity}))},crypto.randomUUID());setOrder(created);setTendered(String(created.TotalAmount));setCheckoutOpen(true);}catch(error){setCheckoutError(axios.isAxiosError(error)&&typeof error.response?.data==="string"?error.response.data:"Could not create the order.");}finally{setSubmitting(false)}};
+  const pay=async()=>{if(!order)return;const paid=Number(tendered);if(paymentMethod!=="CREDIT"&&paid<=0){setCheckoutError("Enter the amount received.");return}setSubmitting(true);setCheckoutError("");try{const result=await recordPayment(order.ID,{paymentMethod:paymentMethod==="CREDIT"?"CASH":paymentMethod,tenderedAmount:paymentMethod==="CREDIT"?0:paid,changeGiven:0,payPreviousCredit:false,payThroughCredit:paymentMethod==="CREDIT"},crypto.randomUUID());setChange(result.change_given);setComplete(true);}catch(error){setCheckoutError(axios.isAxiosError(error)&&typeof error.response?.data==="string"?error.response.data:"Payment could not be recorded.");}finally{setSubmitting(false)}};
 
-  const handleRemove = (productID: number) => {
-    setCart((prev) => prev.filter((item) => item.productID !== productID));
-  };
-
-  const handleCreateOrder = async () => {
-    if (!customer) return;
-    setCreatingOrder(true);
-    setError("");
-    try {
-      const created = await createOrder({
-        customerID: customer.ID,
-        items: cart.map((item) => ({
-          productID: item.productID,
-          unit: item.unit,
-          quantity: item.quantity,
-        })),
-      },
-        orderIdempotencyKey
-      );
-      setOrder(created);
-      setPaymentIdempotencyKey(crypto.randomUUID());
-      setStep("summary");
-    } catch {
-      setError("Could not create order.");
-    } finally {
-      setCreatingOrder(false);
-    }
-  };
-
-  const handleSubmitPayment = async (payload: {
-    paymentMethod: string;
-    tenderedAmount: number;
-    changeGiven: number;
-    payPreviousCredit: boolean;
-    payThroughCredit: boolean;
-  }) => {
-    if (!order) return;
-    setSubmittingPayment(true);
-    setError("");
-    try {
-      const result = await recordPayment(order.ID, payload, paymentIdempotencyKey);
-      setPayment(result.payment);
-      setStep("done");
-    } catch {
-      setError("Payment failed.");
-    } finally {
-      setSubmittingPayment(false);
-    }
-
-  };
-
-  return (
-    <div className="min-h-screen bg-stone-50 px-4 py-10">
-      <div className="max-w-5xl mx-auto">
-        <button
-          onClick={() => navigate("/")}
-          className="text-stone-500 hover:text-stone-700 text-sm mb-6 inline-block"
-        >
-          ← Back to Home
-        </button>
-
-        {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
-
-        {step === "customer" && (
-          <CustomerStep
-            onCustomerFound={(c) => {
-              setCustomer(c);
-              // once the customer is found just before goint to product list set up the orderIdempotencyKey
-              setOrderIdempotencyKey(crypto.randomUUID());
-              setStep("cart");
-            }}
-          />
-        )}
-
-        {step === "cart" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <ProductList onAddToCart={handleAddToCart} />
-            </div>
-            <div>
-              <CartPanel
-                items={cart}
-                onQuantityChange={handleQuantityChange}
-                // onDecrease={handleDecrease}
-                onRemove={handleRemove}
-                onCreateOrder={handleCreateOrder}
-                creatingOrder={creatingOrder}
-              />
-            </div>
-          </div>
-        )}
-
-        {step === "summary" && order && (
-          <OrderSummary order={order} onProceedToPayment={() => setStep("payment")} />
-        )}
-
-        {step === "payment" && order && customer && (
-          <PaymentForm order={order} customer={customer} onSubmit={handleSubmitPayment} submitting={submittingPayment} />
-        )}
-
-        {step === "done" && payment && (
-          <div className="border-l-4 border-emerald-700 bg-white rounded-r-xl shadow-sm px-8 py-10 max-w-md mx-auto text-center">
-            <h2 className="font-fraunces text-2xl text-stone-800 mb-4">Order Complete</h2>
-            <p className="text-stone-600 mb-1">Change given: ₹{payment.ChangeGiven.toFixed(2)}</p>
-            <button
-              onClick={() => navigate("/")}
-              className="mt-6 w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-lg transition-colors"
-            >
-              Back to Home
-            </button>
-          </div>
-        )}
-      </div>
+  return <div className="flex h-screen min-h-[680px] flex-col overflow-hidden bg-slate-100 font-sans text-slate-900">
+    <header className="flex h-[86px] shrink-0 items-center border-b border-slate-200 bg-white px-5 sm:px-8"><button onClick={()=>navigate("/")} className="group text-left"><h1 className="text-xl font-extrabold tracking-tight sm:text-2xl">POS Counter &amp; Register</h1><p className="mt-1 text-xs font-medium text-slate-400">{today}</p></button><div className="ml-auto flex items-center gap-2 sm:gap-4"><div className="hidden items-center rounded-xl bg-slate-100 p-1 text-xs font-bold md:flex"><span className="rounded-lg bg-white px-3 py-2 text-slate-800 shadow-sm">₹&nbsp; INR</span><span className="px-3 py-2 text-slate-400">$&nbsp; USD</span></div><span className="hidden items-center gap-2 whitespace-nowrap rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-600 lg:flex"><Icon name="database" className="h-4 w-4"/>Sync / Backend (:5000)</span><button aria-label="Notifications" className="relative rounded-full bg-slate-100 p-3 text-slate-500"><Icon name="bell"/><span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-white bg-red-500"/></button><button onClick={reset} className="inline-flex items-center gap-2 whitespace-nowrap rounded-xl bg-orange-500 px-4 py-3 text-xs font-extrabold text-white shadow-lg shadow-orange-200 hover:bg-orange-600 sm:px-6 sm:text-sm"><Icon name="plus" className="h-4 w-4"/>NEW ORDER</button></div></header>
+    <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,2fr)_minmax(380px,1fr)]">
+      <main className="flex min-h-0 flex-col border-r border-slate-200 p-4 sm:p-6 lg:p-8">
+        <section className="mb-5 flex shrink-0 flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm xl:flex-row xl:items-center"><div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 xl:pb-0">{["All","Whole Chicken","Cuts & Boneless","Offal & Specialty","Eggs & More"].map((category,i)=><button key={category} className={`whitespace-nowrap rounded-xl px-4 py-2.5 text-xs font-bold ${i===0?"bg-slate-900 text-white":"text-slate-600 hover:bg-slate-100"}`}>{category}</button>)}</div><label className="relative block xl:w-72"><Icon name="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search products..." className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"/></label></section>
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          {loading&&<div className="grid h-48 place-items-center text-sm font-semibold text-slate-400">Loading products from backend…</div>}
+          {loadError&&<div className="grid h-48 place-items-center rounded-2xl border border-red-200 bg-red-50 p-6 text-center"><div><p className="font-bold text-red-700">{loadError}</p><button onClick={loadProducts} className="mt-3 rounded-lg bg-red-100 px-4 py-2 text-xs font-bold text-red-700">Try again</button></div></div>}
+          {!loading&&!loadError&&<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">{filtered.map(product=>{const quantity=cart.find(i=>i.productID===product.id)?.quantity??0;const weighted=product.unit.toLowerCase()==="kg";return <article key={product.id} className={`flex min-h-64 flex-col rounded-2xl border bg-white p-5 shadow-sm transition ${quantity?"border-orange-400 ring-1 ring-orange-400":"border-slate-200 hover:border-slate--300"}`}><div className="flex items-start justify-between"><span className="rounded-lg bg-slate-100 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-600">{product.unit}</span><span className={`whitespace-nowrap text-xs font-bold ${product.stockQuantity<10?"text-amber-600":"text-slate-400"}`}>Stock: {product.stockQuantity}{product.unit}</span></div><h2 className="mt-5 line-clamp-2 min-h-12 text-base font-extrabold leading-6">{product.title}</h2><p className="mt-3 font-mono text-2xl font-extrabold">₹{product.price}<span className="ml-1 font-sans text-xs font-semibold text-slate-400">/{product.unit}</span></p><div className="mt-auto border-t border-slate-100 pt-4"><div className="mb-3 grid grid-cols-3 gap-1.5">{(weighted?[.5,1,1.5]:[1,2,5]).map(amount=><button key={amount} onClick={()=>add(product,amount)} disabled={product.stockQuantity<=0} className="whitespace-nowrap rounded-lg border border-slate-200 bg-slate-50 px-1 py-2 text-[11px] font-bold text-slate-600 hover:border-orange-300 hover:text-orange-600 disabled:opacity-40">+{amount} {product.unit}</button>)}</div><div className="flex gap-2"><input type="number" min="0" step={weighted?.25:1} value={quantity||""} onChange={e=>setQuantity(product,Number(e.target.value))} placeholder="Custom" className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold outline-none focus:border-orange-300"/><button onClick={()=>add(product,weighted?.5:1)} disabled={product.stockQuantity<=0} className="rounded-lg bg-slate-900 px-4 text-xs font-bold text-white hover:bg-orange-500 disabled:opacity-40">Add</button></div></div></article>})}</div>}
+          {!loading&&!loadError&&!filtered.length&&<div className="grid h-48 place-items-center text-sm text-slate-400">No products match “{search}”.</div>}
+        </div>
+      </main>
+      <aside className="flex min-h-0 flex-col bg-white">
+        <section className="shrink-0 border-b border-slate-100 p-5"><h2 className="mb-3 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate- text-slate-700"><Icon name="user" className="h-4 w-4 text-orange-500"/>Customer / Udhaar Account</h2>{customer?<div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3"><span className="grid h-9 w-9 place-items-center rounded-full bg-emerald-100 text-emerald-700"><Icon name="check" className="h-4 w-4"/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-800">{customer.name}</p><p className="text-[11px] text-slate-500">{customer.phone_number} · Credit {money(customer.balance)}</p></div><button onClick={()=>setCustomer(null)} className="p-2 text-slate-400"><Icon name="close" className="h-4 w-4"/></button></div>:<><div className="flex gap-2"><label className="relative min-w-0 flex-1"><Icon name="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><input value={phone} onChange={e=>setPhone(e.target.value.replace(/\D/g,"").slice(0,10))} onKeyDown={e=>e.key==="Enter"&&lookup()} placeholder="Lookup 10-digit phone" className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-orange-300"/></label><button onClick={lookup} disabled={lookingUp} className="rounded-xl bg-slate-900 px-4 text-xs font-bold text-white disabled:opacity-50">{lookingUp?"…":"Find"}</button></div>{customerError&&<p className="mt-2 text-xs font-semibold text-red-500">{customerError}</p>}<div className="mt-3 flex justify-between text-[11px]"><span className="text-slate-400">Not in list?</span><button onClick={()=>navigate("/customer/register")} className="font-bold text-orange-500">+ Register Customer</button></div></>}
+        </section>
+        <section className="min-h-0 flex-1 overflow-y-auto p-5">{cart.length===0?<div className="grid h-full place-items-center text-center"><div><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-slate-100 text-slate-400"><Icon name="plus"/></span><p className="mt-4 text-sm font-bold text-slate-700">Your order is empty</p><p className="mt-1 text-xs text-slate-400">Add a product to get started</p></div></div>:<div className="space-y-5">{cart.map(item=>{const product=products.find(p=>p.id===item.productID)!;return <div key={item.productID}><div className="flex items-start gap-3"><div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold">{item.title}</p><p className="mt-1 font-mono text-xs text-slate-400">₹{item.price} / {item.unit}</p></div><p className="whitespace-nowrap font-mono text-sm font-bold">{money(item.price*item.quantity)}</p><button onClick={()=>setQuantity(product,0)} className="p-1 text-slate-300 hover:text-red-500"><Icon name="trash" className="h-4 w-4"/></button></div><div className="mt-3 flex items-center gap-2"><div className="flex items-center rounded-lg border border-slate-200 bg-slate-50"><button onClick={()=>add(product,-(item.unit.toLowerCase()==="kg"?.5:1))} className="p-2 text-slate-500"><Icon name="minus" className="h-3 w-3"/></button><span className="min-w-12 text-center font-mono text-xs font-bold">{item.quantity}</span><button onClick={()=>add(product,item.unit.toLowerCase()==="kg"?.5:1)} className="p-2 text-slate-500"><Icon name="plus" className="h-3 w-3"/></button></div><span className="text-xs font-bold text-slate-400">{item.unit}</span></div></div>})}</div>}</section>
+        <footer className="shrink-0 border-t border-slate-200 bg-slate-50 p-5"><div className="mb-3 flex justify-between text-xs font-semibold text-slate-500"><span>Subtotal ({cart.length} items / {units} units)</span><span className="font-mono font-bold text-slate-700">{money(total)}</span></div><div className="mb-5 flex items-end justify-between border-t border-slate-200 pt-4"><span className="text-lg font-extrabold">Total Amount</span><span className="font-mono text-2xl font-extrabold text-orange-500">{money(total)}</span></div>{checkoutError&&<p className="mb-3 rounded-lg bg-red-50 p-2 text-xs font-semibold text-red-600">{checkoutError}</p>}<div className="flex gap-3"><button onClick={()=>setCart([])} disabled={!cart.length} className="rounded-xl border border-slate-200 bg-white px-6 text-xs font-bold text-slate-600 disabled:opacity-40">Clear</button><button onClick={beginCheckout} disabled={!cart.length||submitting} className="flex flex flex-nowrap flex-1 items-center justify-center gap-2 rounded-xl bg-orange-500 py-4 text-sm font-extrabold text-white shadow-lg shadow-orange-200 hover:bg-orange-600 disabled:opacity-40">{submitting?"CREATING ORDER…":"CHECKOUT & PAY"}<Icon name="arrow" className="h-4 w-4"/></button></div></footer>
+      </aside>
     </div>
-  );
+    {checkoutOpen&&<div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/55 p-4 backdrop-blur-sm"><div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">{complete?<div className="text-center"><span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100 text-emerald-600"><Icon name="check" className="h-8 w-8"/></span><h2 className="mt-5 text-2xl font-extrabold">Payment complete</h2><p className="mt-2 text-sm text-slate-500">Order #{order?.ID} was recorded successfully.</p>{change>0&&<p className="mt-5 rounded-xl bg-orange-50 p-4 font-mono text-lg font-bold text-orange-600">Change: {money(change)}</p>}<button onClick={reset} className="mt-6 w-full rounded-xl bg-orange-500 py-3.5 text-sm font-bold text-white">Start New Order</button></div>:<><div className="flex items-center justify-between"><div><p className="text-[10px] font-bold uppercase tracking-wider text-orange-500">Order #{order?.ID}</p><h2 className="mt-1 text-xl font-extrabold">Take payment</h2></div><button onClick={()=>setCheckoutOpen(false)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><Icon name="close"/></button></div><div className="my-5 rounded-xl bg-slate-900 p-5 text-white"><p className="text-xs font-semibold text-slate-400">Amount due</p><p className="mt-1 font-mono text-3xl font-extrabold">{money(order?.TotalAmount??total)}</p></div><div className="grid grid-cols-3 gap-2">{[["CASH","cash"],["UPI","card"],["CREDIT","user"]].map(([method,icon])=><button key={method} onClick={()=>setPaymentMethod(method)} className={`flex flex-col items-center gap-2 rounded-xl border p-3 text-xs font-bold ${paymentMethod===method?"border-orange-500 bg-orange-50 text-orange-600":"border-slate-200 text-slate-500"}`}><Icon name={icon as IconName}/>{method}</button>)}</div>{paymentMethod!=="CREDIT"&&<label className="mt-5 block"><span className="mb-2 block text-xs font-bold text-slate-600">Amount received</span><input type="number" value={tendered} onChange={e=>setTendered(e.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-3 font-mono text-lg font-bold outline-none focus:border-orange-400 focus:ring-4 focus:ring-orange-100"/></label>}{checkoutError&&<p className="mt-3 text-xs font-semibold text-red-500">{checkoutError}</p>}<button onClick={pay} disabled={submitting} className="mt-5 w-full rounded-xl bg-orange-500 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-orange-200 disabled:opacity-50">{submitting?"PROCESSING…":paymentMethod==="CREDIT"?"CHARGE TO CREDIT":"CONFIRM PAYMENT"}</button></>}</div></div>}
+  </div>;
 }
