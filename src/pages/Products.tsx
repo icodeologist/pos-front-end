@@ -19,22 +19,22 @@ export default function Products() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-stone-50 px-4 py-10">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-slate-100 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
         <button
           onClick={() => navigate("/")}
-          className="text-stone-500 hover:text-stone-700 text-sm mb-6 inline-block"
+          className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-orange-500"
         >
           ← Back to Home
         </button>
 
-        <h1 className="font-fraunces text-2xl text-stone-800 mb-6">Products</h1>
+        <div className="mb-7 flex items-end justify-between"><div><p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">Inventory</p><h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Products</h1><p className="mt-1 text-sm text-slate-500">Manage pricing, units and available stock.</p></div><button onClick={() => navigate("/products/new")} className="whitespace-nowrap rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600">+ New Product</button></div>
 
-        {loading && <p className="text-stone-500">Loading products...</p>}
-        {error && <p className="text-red-600">{error}</p>}
+        {loading && <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-400 shadow-sm">Loading products...</div>}
+        {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-600">{error}</div>}
 
         {!loading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <CreateProductCard onClick={() => navigate("/products/new")} />
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
