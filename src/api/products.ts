@@ -16,7 +16,7 @@ export interface CreateProductPayload {
 }
 
 export const createProduct = async (payload: CreateProductPayload): Promise<Product> => {
-  const res = await apiClient.post<Product>("/products", payload);
+  const res = await apiClient.post<Product>("/products/new", payload);
   return res.data;
 };
 
