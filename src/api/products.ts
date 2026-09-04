@@ -31,6 +31,6 @@ export const updateProduct = async (
   id: number,
   payload: UpdateProductPayload
 ): Promise<Product> => {
-  const res = await apiClient.patch<Product>(`/products/${id}`, payload);
+  const res = await apiClient.patch<Product>(`/products/edit/${id}`, payload);
   return res.data;
 };
