@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 import { getCustomerByPhone, registerCustomer } from "../../api/customer";
 import type { Customer } from "../../types/billing";
 
@@ -24,8 +25,8 @@ export default function CustomerStep({ onCustomerFound }: CustomerStepProps) {
       const found = await getCustomerByPhone(phone);
       setCustomer(found);
       setStage("found");
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err) && err.response?.status === 404) {
         setStage("not-found");
       } else {
         setError("Something went wrong looking up the customer.");

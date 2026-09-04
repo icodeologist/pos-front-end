@@ -19,6 +19,8 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// This small app keeps its provider and hook together intentionally.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useRole() {
   const ctx = useContext(RoleContext);
   if (!ctx) throw new Error("useRole must be used within RoleProvider");
