@@ -34,3 +34,16 @@ export const updateProduct = async (
   const res = await apiClient.patch<Product>(`/products/edit/${id}`, payload);
   return res.data;
 };
+
+export interface UpdateStockPayload {
+  stockQuantity: number;
+}
+
+// Quantity-only endpoint shared by authenticated admin and staff users.
+export const updateStock = async (
+  id: number,
+  payload: UpdateStockPayload
+): Promise<Product> => {
+  const res = await apiClient.patch<Product>(`/products/${id}/stock`, payload);
+  return res.data;
+};
