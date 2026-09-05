@@ -17,8 +17,8 @@ function App() {
     <RoleProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
           <Route element={<AppShell />}>
+            <Route path="/" element={<Home />} />
             <Route path="/admin/register" element={<AdminRegister />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/customer/register" element={<CustomerLookup />} />

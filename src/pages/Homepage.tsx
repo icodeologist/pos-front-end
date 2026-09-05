@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useRole } from "../context/RoleContext";
 import { getInvoices, type Invoice } from "../api/orders";
 import { getProducts } from "../api/products";
-import ThemeToggle from "../components/ThemeToggle";
 
 type IconName = "grid" | "cart" | "box" | "users" | "chart" | "receipt" | "credit" | "settings" | "search" | "bell" | "menu" | "arrow" | "trend" | "wallet" | "bag" | "alert" | "plus" | "close";
 const paths: Record<IconName, ReactNode> = {
@@ -19,16 +18,12 @@ const paths: Record<IconName, ReactNode> = {
 };
 function Icon({name,className="h-5 w-5"}:{name:IconName;className?:string}) { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">{paths[name]}</svg>; }
 
-const nav: {label:string;icon:IconName;path?:string}[] = [
-  {label:"Overview",icon:"grid",path:"/"},{label:"Point of Sale",icon:"cart",path:"/billing"},{label:"Products",icon:"box",path:"/products"},{label:"Customers",icon:"users",path:"/customer/register"},{label:"Credit System",icon:"credit",path:"/credit"},{label:"Reports",icon:"chart"}
-];
 const money=(value:number)=>new Intl.NumberFormat("en-IN",{style:"currency",currency:"INR",minimumFractionDigits:2}).format(value);
 const sameDay=(a:Date,b:Date)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
 
 export default function Home() {
-  const navigate=useNavigate(); const {role,setRole}=useRole(); const [open,setOpen]=useState(false);
+  const navigate=useNavigate(); const {role}=useRole();
   const [invoices,setInvoices]=useState<Invoice[]>([]); const [lowStock,setLowStock]=useState(0); const [dashboardLoading,setDashboardLoading]=useState(true); const [dashboardError,setDashboardError]=useState("");
-  const go=(path?:string)=>{if(path) navigate(path); setOpen(false)};
   useEffect(()=>{Promise.all([getInvoices(100),getProducts()]).then(([invoiceData,products])=>{setInvoices(invoiceData);setLowStock(products.filter(product=>product.stockQuantity<10).length)}).catch(()=>setDashboardError("Could not load live dashboard data from the backend.")).finally(()=>setDashboardLoading(false))},[]);
   const now=new Date(); const todaysInvoices=invoices.filter(invoice=>sameDay(new Date(invoice.time),now));
   const todayRevenue=todaysInvoices.reduce((sum,invoice)=>sum+invoice.amount,0); const productsSold=todaysInvoices.reduce((sum,invoice)=>sum+invoice.items_sold,0);
@@ -36,15 +31,6 @@ export default function Home() {
   const weekData=Array.from({length:7},(_,index)=>{const date=new Date(startOfWeek);date.setDate(startOfWeek.getDate()+index);return invoices.filter(invoice=>sameDay(new Date(invoice.time),date)).reduce((sum,invoice)=>sum+invoice.amount,0)});
   const maxWeek=Math.max(...weekData,1); const recentInvoices=invoices.slice(0,10);
   return <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
-    {open&&<button aria-label="Close navigation" className="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" onClick={()=>setOpen(false)}/>}
-    <aside className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-slate-900 px-4 py-5 text-white transition-transform duration-300 lg:translate-x-0 ${open?"translate-x-0":"-translate-x-full"}`}>
-      <div className="flex items-center justify-between px-2 pb-8"><button onClick={()=>go("/")} className="flex items-center gap-3 text-left"><span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-500 shadow-lg shadow-orange-950/30"><Icon name="receipt"/></span><span><span className="block text-lg font-extrabold tracking-tight">NexaPOS</span><span className="block text-[10px] font-bold uppercase tracking-[.2em] text-slate-400">Business Suite</span></span></button><button className="p-2 text-slate-400 lg:hidden" onClick={()=>setOpen(false)}><Icon name="close"/></button></div>
-      <p className="px-3 pb-3 text-[10px] font-bold uppercase tracking-[.18em] text-slate-500">Workspace</p>
-      <nav className="space-y-1">{nav.map((item,i)=><button key={item.label} onClick={()=>go(item.path)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold transition ${i===0?"bg-orange-500 text-white shadow-lg shadow-orange-950/20":"text-slate-400 hover:bg-slate-800 hover:text-white"}`}><Icon name={item.icon} className="h-[18px] w-[18px]"/><span className="whitespace-nowrap">{item.label}</span></button>)}</nav>
-      <div className="mt-auto space-y-2"><ThemeToggle/><button className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-slate-400 hover:bg-slate-800 hover:text-white"><Icon name="settings" className="h-[18px] w-[18px]"/>Settings</button></div>
-    </aside>
-    <div className="lg:pl-64">
-      <header className="sticky top-0 z-30 flex h-[76px] items-center border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8"><button className="mr-3 rounded-xl border border-slate-200 p-2.5 text-slate-600 lg:hidden" onClick={()=>setOpen(true)}><Icon name="menu"/></button><div className="relative hidden max-w-md flex-1 md:block"><Icon name="search" className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"/><input className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm outline-none placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100" placeholder="Search products, orders, customers..."/></div><div className="ml-auto flex items-center gap-3 sm:gap-4"><button aria-label="Notifications" className="relative rounded-xl border border-slate-200 p-2.5 text-slate-500"><Icon name="bell" className="h-[18px] w-[18px]"/><span className="absolute right-2 top-2 h-2 w-2 rounded-full border-2 border-white bg-orange-500"/></button><div className="hidden h-8 w-px bg-slate-200 sm:block"/><button onClick={()=>setRole(role==="admin"?"staff":"admin")} title="Switch preview role" className="flex items-center gap-3 text-left"><span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-900 text-sm font-extrabold text-white">{role==="admin"?"AU":"SU"}</span><span className="hidden sm:block"><span className="block text-sm font-bold text-slate-800">{role==="admin"?"Admin User":"Staff User"}</span><span className="block text-[11px] font-semibold capitalize text-slate-400">{role} account</span></span></button></div></header>
       <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
         <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">{new Intl.DateTimeFormat("en-IN",{weekday:"long",day:"2-digit",month:"long"}).format(now)}</p><h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Good morning, {role === "admin" ? "Admin" : "Staff"}.</h1><p className="mt-1.5 text-sm text-slate-500">Here’s what’s happening with your business today.</p></div><button onClick={()=>navigate("/billing")} className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-200 transition hover:-translate-y-0.5 hover:bg-orange-600"><Icon name="plus" className="h-4 w-4"/>New Sale</button></div>
         {dashboardError&&<div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-600">{dashboardError}</div>}
@@ -57,6 +43,5 @@ export default function Home() {
         </section>
         <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><div className="flex items-center justify-between border-b border-slate-100 px-5 py-5 sm:px-6"><div><h2 className="font-extrabold">Recent transactions</h2><p className="mt-1 text-xs text-slate-400">Latest 10 invoices generated from real orders</p></div>{dashboardLoading&&<span className="text-xs font-semibold text-slate-400">Loading…</span>}</div><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left"><thead><tr className="bg-slate-50 text-[10px] font-bold uppercase tracking-wider text-slate-400">{["Invoice","Customer","Time","Amount","Status"].map(h=><th key={h} className="px-6 py-3">{h}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{recentInvoices.map(invoice=><tr key={invoice.invoice_id} className="hover:bg-slate-50"><td className="px-6 py-4 font-mono text-xs font-semibold text-slate-700">#{invoice.invoice_id}</td><td className="px-6 py-4 text-sm font-semibold">{invoice.customer_name}</td><td className="px-6 py-4 text-xs text-slate-400">{new Intl.DateTimeFormat("en-IN",{dateStyle:"medium",timeStyle:"short"}).format(new Date(invoice.time))}</td><td className="px-6 py-4 font-mono text-sm font-semibold">{money(invoice.amount)}</td><td className="px-6 py-4"><span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-bold ${invoice.amount_status==="Paid"?"bg-emerald-100 text-emerald-700":"bg-amber-100 text-amber-700"}`}>{invoice.amount_status}</span></td></tr>)}</tbody></table>{!dashboardLoading&&!dashboardError&&!recentInvoices.length&&<p className="p-6 text-center text-sm text-slate-400">No orders found.</p>}</div></section>
       </main>
-    </div>
   </div>;
 }
