@@ -9,6 +9,8 @@ import { RoleProvider } from "./context/RoleContext";
 import CreateProduct from "./pages/CreateProduct";
 import EditProduct from "./pages/EditProduct";
 import AppShell from "./components/layout/AppShell";
+import CreditSystem from "./pages/CreditSystem";
+import Reports from "./pages/Reports";
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
             <Route path="/products" element={<Products />} />
             <Route path="/products/new" element={<CreateProduct />} />
             <Route path="/products/edit/:id" element={<EditProduct />} />
+            <Route path="/credit" element={<CreditSystem />} />
+            <Route path="/reports" element={<Reports />} />
           </Route>
         </Routes>
       </BrowserRouter>
