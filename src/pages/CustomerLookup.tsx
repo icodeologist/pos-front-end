@@ -51,7 +51,7 @@ export default function CustomerLookup() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <button onClick={() => navigate("/")} className="mb-8 flex items-center gap-3 text-left"><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500 font-extrabold text-white shadow-lg shadow-orange-200">N</span><span><span className="block font-extrabold text-slate-900">NexaPOS</span><span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Business Suite</span></span></button><p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">
+        <button onClick={() => navigate("/")} className="mb-8 flex items-center gap-3 text-left"><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500 font-extrabold text-white shadow-lg shadow-orange-200">A</span><span><span className="block font-extrabold text-slate-900">AvinsMart</span><span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Business Suite</span></span></button><p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">
           New Order
         </p>
         <h1

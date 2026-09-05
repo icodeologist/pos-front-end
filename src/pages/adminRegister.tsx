@@ -26,7 +26,7 @@ export default function AdminRegister() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <div className="mb-8 flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500 font-extrabold text-white shadow-lg shadow-orange-200">N</span><div><p className="font-extrabold text-slate-900">NexaPOS</p><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Business Suite</p></div></div><p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">
+        <div className="mb-8 flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-xl bg-orange-500 font-extrabold text-white shadow-lg shadow-orange-200">A</span><div><p className="font-extrabold text-slate-900">AvinsMart</p><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Business Suite</p></div></div><p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">
           Admin Registration
         </p>
         <h1 className="mb-2 text-2xl font-extrabold text-slate-900">
