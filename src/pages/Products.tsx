@@ -11,10 +11,19 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const loadProducts = () => {
+    setLoading(true);
+    setError("");
+    getProducts()
+      .then(setProducts)
+      .catch(() => setError("Could not load products from the backend."))
+      .finally(() => setLoading(false));
+  };
+
   useEffect(() => {
     getProducts()
       .then(setProducts)
-      .catch(() => setError("Could not load products."))
+      .catch(() => setError("Could not load products from the backend."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -31,7 +40,7 @@ export default function Products() {
         <div className="mb-7 flex items-end justify-between"><div><p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">Inventory</p><h1 className="text-3xl font-extrabold tracking-tight text-slate-900">Products</h1><p className="mt-1 text-sm text-slate-500">Manage pricing, units and available stock.</p></div><button onClick={() => navigate("/products/new")} className="whitespace-nowrap rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600">+ New Product</button></div>
 
         {loading && <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-400 shadow-sm">Loading products...</div>}
-        {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-600">{error}</div>}
+        {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-semibold text-red-600"><p>{error}</p><button onClick={loadProducts} className="mt-3 rounded-lg bg-red-100 px-4 py-2 text-xs font-bold text-red-700">Try again</button></div>}
 
         {!loading && !error && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
