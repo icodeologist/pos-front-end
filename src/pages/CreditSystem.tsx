@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { getCreditSummary, type CreditSummary } from "../api/credit";
 
 type LedgerStatus = "owing" | "settled";
 type LedgerCustomer = {
@@ -30,9 +31,16 @@ function Icon({ children, className = "h-4 w-4" }: { children: ReactNode; classN
 export default function CreditSystem() {
   const [filter, setFilter] = useState<"owing" | "all" | "settled">("owing");
   const [search, setSearch] = useState("");
+  const [summary, setSummary] = useState<CreditSummary | null>(null);
+  const [summaryError, setSummaryError] = useState("");
+  useEffect(() => {
+    getCreditSummary()
+      .then(setSummary)
+      .catch(() => setSummaryError("Could not load credit totals from the backend."));
+  }, []);
   const owing = customers.filter(customer => customer.balance > 0);
   const settled = customers.filter(customer => customer.balance === 0);
-  const totalOutstanding = owing.reduce((sum, customer) => sum + customer.balance, 0);
+  const healthTone = summary?.settlement_health === "At risk" ? "text-red-600" : summary?.settlement_health === "Watch" ? "text-amber-600" : "text-emerald-600";
   const visibleCustomers = customers.filter(customer => {
     const matchesFilter = filter === "all" || customer.status === filter;
     const query = search.trim().toLowerCase();
@@ -43,13 +51,14 @@ export default function CreditSystem() {
   return <div className="min-h-screen bg-slate-100 text-slate-900">
     <header className="flex min-h-[76px] items-center border-b border-slate-200 bg-white px-5 sm:px-8">
       <div><h1 className="text-xl font-extrabold tracking-tight">Credit System &amp; Udhaar Ledger</h1><p className="mt-1 text-xs font-medium text-slate-400">{new Intl.DateTimeFormat("en-IN", { dateStyle: "full" }).format(new Date())}</p></div>
-      <div className="ml-auto hidden items-center gap-3 sm:flex"><span className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600">₹&nbsp; INR</span><span className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600">Backend sync pending</span></div>
+      <div className="ml-auto hidden items-center gap-3 sm:flex"><span className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600">₹&nbsp; INR</span><span className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600">{summaryError ? "Sync unavailable" : summary ? "Live database totals" : "Syncing…"}</span></div>
     </header>
     <main className="p-4 sm:p-6 lg:p-8">
+      {summaryError&&<div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-600">{summaryError}</div>}
       <section className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Total outstanding udhaar</p><p className="mt-4 font-mono text-3xl font-extrabold text-orange-500">{money(totalOutstanding)}</p><p className="mt-2 text-xs text-slate-400">Across {owing.length} customer accounts</p></div><span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-500"><Icon><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10h10M7 14h7"/></Icon></span></div></article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Pending collections</p><p className="mt-4 font-mono text-3xl font-extrabold">{owing.length}</p><p className="mt-2 text-xs text-slate-400">Customers with non-zero ledger</p></div><span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-500"><Icon><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></Icon></span></div></article>
-        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Settlement health</p><p className="mt-4 text-3xl font-extrabold text-emerald-600">Active</p><p className="mt-2 text-xs text-slate-400">Ready for reminders and partial payments</p></div><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-500"><Icon><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></Icon></span></div></article>
+        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Total outstanding udhaar</p><p className="mt-4 font-mono text-3xl font-extrabold text-orange-500">{summary ? money(summary.total_credit) : "—"}</p><p className="mt-2 text-xs text-slate-400">Current balance across all customers</p></div><span className="grid h-10 w-10 place-items-center rounded-xl bg-orange-50 text-orange-500"><Icon><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 10h10M7 14h7"/></Icon></span></div></article>
+        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Pending collections</p><p className="mt-4 font-mono text-3xl font-extrabold">{summary?.pending_collections ?? "—"}</p><p className="mt-2 text-xs text-slate-400">Customers owing more than ₹0.01</p></div><span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-500"><Icon><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4m0 4h.01"/></Icon></span></div></article>
+        <article className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"><div className="flex items-start justify-between"><div><p className="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Settlement health</p><p className={`mt-4 text-3xl font-extrabold ${healthTone}`}>{summary?.settlement_health ?? "—"}</p><p className="mt-2 text-xs text-slate-400">{summary ? `${summary.pending_customer_percentage.toFixed(1)}% of ${summary.total_customers} customers currently owe` : "Based on the share of customers owing"}</p></div><span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-500"><Icon><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></Icon></span></div></article>
       </section>
 
       <section className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
