@@ -22,3 +22,10 @@ export async function loginAdmin(payload: LoginPayload) {
   const res = await apiClient.post("/admin/login", payload);
   return res.data;
 }
+
+export async function loginStaff(payload: LoginPayload) {
+  // The backend authenticates every approved account through this endpoint;
+  // authorization comes from the role stored on that account.
+  const res = await apiClient.post("/admin/login", payload);
+  return res.data;
+}
