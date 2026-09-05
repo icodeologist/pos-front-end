@@ -44,61 +44,65 @@ export default function EditProduct() {
     if (!product) return;
     setSubmitting(true);
     setError("");
+    const payload = {
+      title: title.trim() || undefined,
+      price: price ? parseFloat(price) : undefined,
+      stock: stockQuantity ? parseInt(stockQuantity) : undefined,
+    };
+    console.log("SENDING PATCH:", payload);
     try {
-      await updateProduct(product.id, {
-        title: title.trim() || undefined,
-        price: price ? parseFloat(price) : undefined,
-        stock: stockQuantity ? parseInt(stockQuantity) : undefined,
-      });
+      const result = await updateProduct(product.id, payload);
+      console.log("PATCH RESPONSE:", result);
       navigate("/products");
-    } catch {
+    } catch (err) {
+      console.log("PATCH ERROR:", err);
       setError("Could not update product.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <p className="text-stone-500 p-10">Loading...</p>;
-  if (error && !product) return <p className="text-red-600 p-10">{error}</p>;
+  if (loading) return <div className="min-h-screen bg-slate-100 p-10 text-slate-500">Loading...</div>;
+  if (error && !product) return <div className="min-h-screen bg-slate-100 p-10 text-red-600">{error}</div>;
   if (!product) return null;
 
   return (
-    <div className="min-h-screen bg-stone-50 px-4 py-10">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-slate-100 px-4 py-10">
+      <div className="mx-auto max-w-xl">
         <button
           onClick={() => navigate("/products")}
-          className="text-stone-500 hover:text-stone-700 text-sm mb-6 inline-block"
+          className="mb-6 inline-block text-sm font-bold text-slate-500 hover:text-orange-500"
         >
           ← Back to Products
         </button>
 
-        <div className="border-l-4 border-emerald-700 bg-white rounded-r-xl shadow-sm px-8 py-10">
-          <h1 className="font-fraunces text-2xl text-stone-800 mb-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">Inventory</p><h1 className="mb-7 text-2xl font-extrabold text-slate-900">
             Edit {product.title}
           </h1>
 
-          <label className="block text-sm text-stone-600 mb-1">Title</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full border border-stone-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+            className="mb-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           />
 
-          <label className="block text-sm text-stone-600 mb-1">Price</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Price</label>
           <input
             type="number"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            className="w-full border border-stone-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+            className="mb-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           />
 
-          <label className="block text-sm text-stone-600 mb-1">Stock Quantity</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Stock Quantity</label>
           <input
             type="number"
             value={stockQuantity}
             onChange={(e) => setStockQuantity(e.target.value)}
-            className="w-full border border-stone-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+            className="mb-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           />
 
           {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
@@ -106,7 +110,7 @@ export default function EditProduct() {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+            className="w-full whitespace-nowrap rounded-xl bg-orange-500 py-3.5 font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600 disabled:opacity-50"
           >
             {submitting ? "Saving..." : "Save Changes"}
           </button>

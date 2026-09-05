@@ -36,39 +36,39 @@ export default function CreateProduct() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 px-4 py-10">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-slate-100 px-4 py-10">
+      <div className="mx-auto max-w-xl">
         <button
           onClick={() => navigate("/products")}
-          className="text-stone-500 hover:text-stone-700 text-sm mb-6 inline-block"
+          className="mb-6 inline-block text-sm font-bold text-slate-500 hover:text-orange-500"
         >
           ← Back to Products
         </button>
 
-        <div className="border-l-4 border-emerald-700 bg-white rounded-r-xl shadow-sm px-8 py-10">
-          <h1 className="font-fraunces text-2xl text-stone-800 mb-6">New Product</h1>
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <p className="mb-1 text-xs font-bold uppercase tracking-wider text-orange-500">Inventory</p><h1 className="mb-2 text-2xl font-extrabold text-slate-900">New Product</h1><p className="mb-7 text-sm text-slate-500">Add a product to your POS catalogue.</p>
 
-          <label className="block text-sm text-stone-600 mb-1">Title</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full border border-stone-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+            className="mb-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100"
           />
 
-          <label className="block text-sm text-stone-600 mb-1">Price</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Price</label>
           <input
             type="number"
             value={price}
             onChange={(e) => setPrice(e.target.value)}
-            className="w-full border border-stone-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+            className="mb-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono outline-none focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100"
           />
 
-          <label className="block text-sm text-stone-600 mb-1">Unit</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Unit</label>
           <select
             value={unit}
             onChange={(e) => setUnit(e.target.value)}
-            className="w-full border border-stone-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+            className="mb-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           >
             <option value="kg">kg</option>
             <option value="pcs">pcs</option>
@@ -76,20 +76,20 @@ export default function CreateProduct() {
             <option value="box">box</option>
           </select>
 
-          <label className="block text-sm text-stone-600 mb-1">Tax Rate (%)</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Tax Rate (%)</label>
           <input
             type="number"
             value={taxRate}
             onChange={(e) => setTaxRate(e.target.value)}
-            className="w-full border border-stone-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+            className="mb-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           />
 
-          <label className="block text-sm text-stone-600 mb-1">Stock Quantity</label>
+          <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-slate-500">Stock Quantity</label>
           <input
             type="number"
             value={stockQuantity}
             onChange={(e) => setStockQuantity(e.target.value)}
-            className="w-full border border-stone-300 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+            className="mb-5 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono outline-none focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
           />
 
           {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
@@ -97,7 +97,7 @@ export default function CreateProduct() {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50"
+            className="w-full whitespace-nowrap rounded-xl bg-orange-500 py-3.5 font-bold text-white shadow-lg shadow-orange-200 hover:bg-orange-600 disabled:opacity-50"
           >
             {submitting ? "Creating..." : "Create Product"}
           </button>
